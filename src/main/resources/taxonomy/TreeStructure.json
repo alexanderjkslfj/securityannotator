@@ -1,0 +1,87 @@
+{
+  "security features": {
+    "access control": {
+      "authentication": {
+        "credentials": {},
+        "one-time-password": {},
+        "certificate authentication": {},
+        "multifactor authentication": {},
+        "single sign-on": {}
+      },
+      "authorization": {
+        "access quota limitation": {},
+        "Permission-Based": {},
+        "discretionary access control": {},
+        "mandatory access control": {},
+        "lattice-based access control": {},
+        "location-based access control": {},
+        "role-based access control": {},
+        "rule-based access control": {},
+        "timed access control": {},
+        "state-based access control": {},
+        "application mode-based access control": {}
+      }
+    },
+    "cryptography": {
+      "encryption": {
+        "stream ciphers": {},
+        "block ciphers": {},
+        "symmetric key cryptography": {},
+        "asymmetric key cryptography": {},
+        "hybrid cryptosystems": {}
+      },
+      "cryptographic hashing": {},
+      "key management": {
+        "key generation": {},
+        "key distribution": {},
+        "group key management": {},
+        "key storage": {},
+        "key revocation": {}
+      },
+      "signature": {
+        "message signing": {},
+        "certification": {},
+        "message authentication": {},
+        "digital watermarking": {}
+      },
+      "steganography": {}
+    },
+    "security monitoring": {
+      "automated response": {},
+      "history maintenance": {},
+      "logging": {}
+    },
+    "secure data handling": {
+      "data validation": {
+        "input validation": {
+          "blacklisting": {},
+          "shitelisting": {},
+          "download verification": {}
+        },
+        "output validation": {}
+      },
+      "data sanitization": {
+        "input sanitization": {},
+        "output sanitization": {},
+        "parameterized prepared statement": {}
+      },
+      "retention control": {},
+      "secure storage": {},
+      "trusted sources": {
+        "time source": {},
+        "source of randomness": {}
+      }
+    },
+    "system state protection": {
+      "resource management": {},
+      "system state validation": {},
+      "session management": {
+        "replay attack prevention": {},
+        "session fixation protection": {},
+        "session takeover prevention": {},
+        "session timeout": {}
+      },
+      "state synchronization": {}
+    }
+  }
+}
