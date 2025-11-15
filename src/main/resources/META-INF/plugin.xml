@@ -11,5 +11,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.alexanderjkslfj.securityannotator.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.alexanderjkslfj.securityannotator.startup.MyProjectActivity" />
+        <applicationConfigurable
+                displayName="Security Annotator"
+                id="com.github.alexanderjkslfj.securityannotator.config.Settings"
+                instance="com.github.alexanderjkslfj.securityannotator.config.Settings"
+                parentId="tools" />
     </extensions>
 </idea-plugin>
