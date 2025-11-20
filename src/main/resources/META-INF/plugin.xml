@@ -9,7 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.alexanderjkslfj.securityannotator.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="com.github.alexanderjkslfj.securityannotator.toolWindow.LLMWindow" id="LLM Security Analyzer" anchor = "right"/>
         <postStartupActivity implementation="com.github.alexanderjkslfj.securityannotator.startup.MyProjectActivity" />
         <applicationConfigurable
                 displayName="Security Annotator"
