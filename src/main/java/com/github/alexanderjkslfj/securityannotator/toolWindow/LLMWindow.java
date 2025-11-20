@@ -44,7 +44,6 @@ public class LLMWindow implements ToolWindowFactory{
         });
 
         analyzeButton.addActionListener(e -> {
-            ;
             outputArea.setText(" Sending to LLM...");
 
             PromptService service = ApplicationManager
