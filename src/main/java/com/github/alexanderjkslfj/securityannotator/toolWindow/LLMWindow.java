@@ -2,6 +2,8 @@ package com.github.alexanderjkslfj.securityannotator.toolWindow;
 
 import com.github.alexanderjkslfj.securityannotator.config.Settings;
 import com.github.alexanderjkslfj.securityannotator.services.PromptService;
+import com.github.alexanderjkslfj.securityannotator.dataPackage.PromptBuilder;
+
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class LLMWindow implements ToolWindowFactory{
 
@@ -25,7 +28,7 @@ public class LLMWindow implements ToolWindowFactory{
         JLabel label = new JLabel("LLM Analyzer", SwingConstants.CENTER);
 
         JButton analyzeButton = new JButton("Run Analysis");
-        JButton settingsButton = new JButton("Enter API Key");
+        JButton apiKeySetterButton = new JButton("Enter API Key");
 
         JTextArea outputArea = new JTextArea();
         outputArea.setEditable(false);
@@ -33,25 +36,33 @@ public class LLMWindow implements ToolWindowFactory{
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(analyzeButton);
-        buttonPanel.add(settingsButton);
+        buttonPanel.add(apiKeySetterButton);
 
         panel.add(label, BorderLayout.NORTH);
-        panel.add(buttonPanel, BorderLayout.CENTER);
-        panel.add(scrollPane, BorderLayout.SOUTH);
+        panel.add(buttonPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
 
-        settingsButton.addActionListener(e -> {
+        apiKeySetterButton.addActionListener(e -> {
             ShowSettingsUtil.getInstance().showSettingsDialog(project, Settings.class);
         });
 
         analyzeButton.addActionListener(e -> {
-            outputArea.setText(" Sending to LLM...");
+            String promptInput = null;
+            try {
+                promptInput = PromptBuilder.buildPrompt(project);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            outputArea.setText(promptInput);
+            //outputArea.setText(" Sending to LLM...");
+            //currently gets stuck here due to issues with VPN tunnel
 
             PromptService service = ApplicationManager
                     .getApplication()
                     .getService(PromptService.class);
 
             // Send the content to the LLM
-            service.prompt("do some security stuff")
+            service.prompt(promptInput)
                     .thenAccept(response -> ApplicationManager.getApplication().invokeLater(() -> {
                         outputArea.setText("LLM Response:" + response);
                     }))
