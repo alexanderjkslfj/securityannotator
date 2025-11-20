@@ -55,7 +55,7 @@
       "data validation": {
         "input validation": {
           "blacklisting": {},
-          "shitelisting": {},
+          "whitelisting": {},
           "download verification": {}
         },
         "output validation": {}
