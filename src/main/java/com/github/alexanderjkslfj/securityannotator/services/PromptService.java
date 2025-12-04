@@ -1,6 +1,7 @@
 package com.github.alexanderjkslfj.securityannotator.services;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +22,8 @@ import java.util.concurrent.CompletableFuture;
 @Service(Service.Level.APP)
 public final class PromptService {
     private static final @NotNull HttpClient CLIENT = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
-    private static final @NotNull ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final @NotNull ObjectMapper RESPONSE_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final @NotNull ObjectMapper REQUEST_MAPPER = new ObjectMapper();
 
     private static final @NotNull CompletableFuture<Void> loadedApiKeyFromStorage = new CompletableFuture<>();
 
@@ -74,7 +76,7 @@ public final class PromptService {
                     .thenApply(HttpResponse::body)
                     .thenApply(text -> {
                         try {
-                            return MAPPER.readValue(text, CompletionResponse.class);
+                            return RESPONSE_MAPPER.readValue(text, CompletionResponse.class);
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to parse JSON", e);
                         }
@@ -91,7 +93,19 @@ public final class PromptService {
 
     // write the json body for a completions request
     private @NotNull String buildCompletionBody(@NotNull String message) {
-        return String.format("{\"model\": \"%s\",\"messages\": [{\"role\": \"system\", \"content\":\"%s\"}, {\"role\": \"user\", \"content\": \"%s\"}]}", MODEL, SYSTEM_MESSAGE, message);
+        ChatRequest body = new ChatRequest(
+                MODEL,
+                List.of(
+                        new ChatMessage("system", SYSTEM_MESSAGE),
+                        new ChatMessage("user", message)
+                )
+        );
+
+        try {
+            return REQUEST_MAPPER.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON", e);
+        }
     }
 
     // check the list of models available and pick the best one
@@ -125,7 +139,7 @@ public final class PromptService {
                 .thenApply(HttpResponse::body)
                 .thenApply(text -> {
                     try {
-                        return MAPPER.readValue(text, new  TypeReference<List<ModelInfo>>() {});
+                        return RESPONSE_MAPPER.readValue(text, new  TypeReference<List<ModelInfo>>() {});
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to parse JSON", e);
                     }
@@ -167,3 +181,7 @@ record Completion(
 record Message (
         String content
 ) {}
+
+record ChatMessage(String role, String content) {}
+
+record ChatRequest(String model, List<ChatMessage> messages) {}
