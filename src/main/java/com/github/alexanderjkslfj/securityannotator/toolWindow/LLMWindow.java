@@ -3,6 +3,8 @@ package com.github.alexanderjkslfj.securityannotator.toolWindow;
 import com.github.alexanderjkslfj.securityannotator.config.Settings;
 import com.github.alexanderjkslfj.securityannotator.services.PromptService;
 import com.github.alexanderjkslfj.securityannotator.dataPackage.PromptBuilder;
+import com.github.alexanderjkslfj.securityannotator.annotator.CreateSampleAnnotation;
+import com.github.alexanderjkslfj.securityannotator.annotator.Annotator;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -29,6 +31,7 @@ public class LLMWindow implements ToolWindowFactory{
 
         JButton analyzeButton = new JButton("Run Analysis");
         JButton apiKeySetterButton = new JButton("Enter API Key");
+        JButton annotationGenerator = new JButton("generate dummy annotations");
 
         JTextArea outputArea = new JTextArea();
         outputArea.setEditable(false);
@@ -37,6 +40,7 @@ public class LLMWindow implements ToolWindowFactory{
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(analyzeButton);
         buttonPanel.add(apiKeySetterButton);
+        buttonPanel.add(annotationGenerator);
 
         panel.add(label, BorderLayout.NORTH);
         panel.add(buttonPanel, BorderLayout.NORTH);
@@ -55,7 +59,6 @@ public class LLMWindow implements ToolWindowFactory{
             }
             outputArea.setText(promptInput);
             //outputArea.setText(" Sending to LLM...");
-            //currently gets stuck here due to issues with VPN tunnel
 
             PromptService service = ApplicationManager
                     .getApplication()
@@ -72,6 +75,11 @@ public class LLMWindow implements ToolWindowFactory{
                         });
                         return null;
                     });
+        });
+
+        //currently generates hand made annotations, should later use LLM response data
+        annotationGenerator.addActionListener(e -> {
+            Annotator.insertFeatureComment(project, CreateSampleAnnotation.createSampleAnnotations());
         });
 
         ContentFactory contentFactory = ContentFactory.getInstance();
