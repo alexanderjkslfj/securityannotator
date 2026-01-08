@@ -8,7 +8,7 @@ public class TaxonomyReader {
 
     public String readTaxonomy() throws IOException {
         String taxonomy = new String(
-                Objects.requireNonNull(this.getClass().getResourceAsStream("/taxonomy/TreeStructure.json")).readAllBytes(),
+                Objects.requireNonNull(this.getClass().getResourceAsStream("/taxonomy/List.json")).readAllBytes(),
                 StandardCharsets.UTF_8
 
         );

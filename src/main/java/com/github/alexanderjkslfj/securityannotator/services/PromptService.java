@@ -30,7 +30,7 @@ public final class PromptService {
     private static @Nullable String API_KEY = null;
     private static @Nullable String MODEL = null;
 
-    private static final @NotNull String SYSTEM_MESSAGE = "You are a helpful assistant. You are an expert security researcher. You always follow instruction precisely. You never say more than what was asked.";
+    private static final @NotNull String SYSTEM_MESSAGE = "You are a helpful assistant. You are an expert security researcher. You always follow instructions precisely. You never say more than what was asked.";
     private static final @NotNull String API_STORE = "SecurityAnnotator.ApiKey";
 
     private static boolean retrievingBestModel = false;
@@ -61,7 +61,7 @@ public final class PromptService {
         return loadedApiKeyFromStorage.thenApply(x -> API_KEY);
     }
 
-    public @NotNull CompletableFuture<@Nullable String> prompt(@NotNull String message) {
+    public @NotNull CompletableFuture<@Nullable String> prompt(@NotNull String message) throws RuntimeException {
         return retrievedBestModel.thenCompose(x -> {
             String body = buildCompletionBody(message);
 
@@ -92,9 +92,11 @@ public final class PromptService {
     }
 
     // write the json body for a completions request
-    private @NotNull String buildCompletionBody(@NotNull String message) {
+    private @NotNull String buildCompletionBody(@NotNull String message) throws RuntimeException {
         ChatRequest body = new ChatRequest(
                 MODEL,
+                0,
+                0.01,
                 List.of(
                         new ChatMessage("system", SYSTEM_MESSAGE),
                         new ChatMessage("user", message)
@@ -184,4 +186,9 @@ record Message (
 
 record ChatMessage(String role, String content) {}
 
-record ChatRequest(String model, List<ChatMessage> messages) {}
+record ChatRequest(
+        String model,
+        double temperature,
+        double top_p,
+        List<ChatMessage> messages
+) {}

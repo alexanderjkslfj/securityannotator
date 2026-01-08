@@ -4,6 +4,8 @@ package com.github.alexanderjkslfj.securityannotator.annotator;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.alexanderjkslfj.securityannotator.util.Annotation;
+
 public class CreateSampleAnnotation {
     public static List<Annotation> createSampleAnnotations () {
         List<Annotation> annotations = new ArrayList<Annotation>();

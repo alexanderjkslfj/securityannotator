@@ -2,19 +2,20 @@ package com.github.alexanderjkslfj.securityannotator.dataPackage;
 
 import java.io.IOException;
 
+import com.github.alexanderjkslfj.securityannotator.util.Parser;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 public class PromptBuilder {
 
     public static String buildPrompt(@NotNull Project project) throws IOException {
-        String prompt = "";
-        String promptText = "You are a code security analyzer.\n given the following taxonomy:\n";
+        String promptText1 = "I want a section of code to be searched for security features. I'm looking for the following categories of security features (formatted as a JSON array):\n";
         String taxonomy = new TaxonomyReader().readTaxonomy();
-        String promptText2 = "analyze the following code segment and find security features that match the ones in the taxonomy:\n ";
+        String promptText2 = "\nWhenever you find a piece of code that matches a category, give me the code piece together with its category.\n";
+        String promptText3 = "Answer in JSON format, like this: ";
+        String responseStructure = Parser.getStructureExample();
+        String promptText4 = "\nEverything that follows is the code that is to be searched:\n";
         String openedClass = OpenedClass.getCurrentPage(project);
-        String promptText3 = "please return the features in a format matching the taxonomy. If no security features were found, please simply reply with 'no security features found'";
-        prompt = promptText + taxonomy + promptText2 + openedClass + promptText3 ;
-        return prompt;
+        return promptText1 + taxonomy + promptText2 + promptText3 + responseStructure + promptText4 + openedClass;
     }
 }

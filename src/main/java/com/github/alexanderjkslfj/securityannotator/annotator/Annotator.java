@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Comparator;
 import java.util.List;
 
+import com.github.alexanderjkslfj.securityannotator.util.Annotation;
+
 public class Annotator {
     public static void insertFeatureComment(@NotNull Project project, List<Annotation>annotations){
         {
@@ -25,7 +27,7 @@ public class Annotator {
 
 
             // Sort annotations descending by endLine so edits don't shift earlier ones
-            annotations.sort(Comparator.comparingInt(a -> -a.getEndingRow()));
+            annotations.sort(Comparator.comparingInt(a -> -a.end_line()));
 
             WriteCommandAction.runWriteCommandAction(project, () -> {
 
@@ -42,11 +44,11 @@ public class Annotator {
 
     private static void insertAnnotation(Document document, Annotation ann) {
 
-        int startOffset = document.getLineStartOffset(ann.getStartingRow()-1);
-        int endOffset   = document.getLineEndOffset(ann.getEndingRow()-1);
+        int startOffset = document.getLineStartOffset(ann.start_line()-1);
+        int endOffset   = document.getLineEndOffset(ann.end_line()-1);
 
-        String startComment = "// " + ann.getAnnotationText() + "\n";
-        String endComment   = "\n// end of " + ann.getAnnotationText() + "\n";
+        String startComment = "// " + ann.category() + "\n";
+        String endComment   = "\n// end of " + ann.category() + "\n";
 
         document.insertString(endOffset, endComment);
         document.insertString(startOffset, startComment);
