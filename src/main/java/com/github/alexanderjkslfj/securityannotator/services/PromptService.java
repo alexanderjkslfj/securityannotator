@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.alexanderjkslfj.securityannotator.dataPackage.InvalidApiKeyException;
 import com.intellij.credentialStore.CredentialAttributes;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.components.Service;
@@ -61,7 +62,7 @@ public final class PromptService {
         return loadedApiKeyFromStorage.thenApply(x -> API_KEY);
     }
 
-    public @NotNull CompletableFuture<@Nullable String> prompt(@NotNull String message) {
+    public @NotNull CompletableFuture<@Nullable String> promptRUBGPT(@NotNull String message) {
         return retrievedBestModel.thenCompose(x -> {
             String body = buildCompletionBody(message);
 
@@ -73,7 +74,19 @@ public final class PromptService {
 
             return CLIENT
                     .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                    .thenApply(HttpResponse::body)
+                    .thenApply(response -> {
+                        //checks if the api key is valid
+                        int status = response.statusCode();
+                        String requestBody = response.body();
+
+                        if (status == 401 || status == 403) {
+                            throw new InvalidApiKeyException(
+                                    "Invalid API key for this provider or model"
+                            );
+                        }
+
+                        return requestBody;
+                    })
                     .thenApply(text -> {
                         try {
                             return RESPONSE_MAPPER.readValue(text, CompletionResponse.class);
@@ -91,10 +104,71 @@ public final class PromptService {
         });
     }
 
+    public @NotNull CompletableFuture<@Nullable String> promptChatGPT(@NotNull String message) {
+
+        // ChatGPT model
+        final String chatGptModel = "gpt-4.1-mini";
+        // Build request body
+        String body = buildCompletionBodyGPT(message, chatGptModel);
+
+        HttpRequest request = HttpRequest.newBuilder(
+                    URI.create("https://api.openai.com/v1/chat/completions"))
+                .header("Authorization", "Bearer " + API_KEY)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+        return CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    //checks if the api key is valid
+                    int status = response.statusCode();
+                    String requestBody = response.body();
+
+                    if (status == 401 || status == 403) {
+                        throw new InvalidApiKeyException(
+                                "Invalid API key for this provider or model"
+                        );
+                    }
+
+                    return requestBody;
+                })
+                .thenApply(text -> {
+                    try {
+                        return RESPONSE_MAPPER.readValue(text, CompletionResponse.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to parse JSON", e);
+                    }
+                })
+                .thenApply(response -> {
+                    List<Completion> completions = response.completions();
+                    if (completions == null || completions.isEmpty()) {
+                        throw new RuntimeException("ChatGPT returned an empty response");
+                    }
+                    return completions.getFirst().message().content();
+                });
+    }
+
+
     // write the json body for a completions request
     private @NotNull String buildCompletionBody(@NotNull String message) {
         ChatRequest body = new ChatRequest(
                 MODEL,
+                List.of(
+                        new ChatMessage("system", SYSTEM_MESSAGE),
+                        new ChatMessage("user", message)
+                )
+        );
+
+        try {
+            return REQUEST_MAPPER.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON", e);
+        }
+    }
+
+    private @NotNull String buildCompletionBodyGPT(@NotNull String message, @NotNull String chatGptModel) {
+        ChatRequest body = new ChatRequest(
+                chatGptModel,
                 List.of(
                         new ChatMessage("system", SYSTEM_MESSAGE),
                         new ChatMessage("user", message)

@@ -1,54 +1,56 @@
 package com.github.alexanderjkslfj.securityannotator.annotator;
 
-import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.alexanderjkslfj.securityannotator.dataPackage.MethodIDGenerator;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiMethod;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toMap;
 
 public class Annotator {
-    public static void insertFeatureComment(@NotNull Project project, List<Annotation>annotations){
+    public static void insertFeatureComment(@NotNull Project project, String LLMResponse) throws JsonProcessingException {
         {
-            Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+            List<PsiMethod> methods = MethodGatherer.collectMethods(project);
 
-            if (editor == null) {
-                return; // in case editor is open
+            Map<String, PsiMethod> methodIndex =
+                    methods.stream().collect(toMap(
+                            MethodIDGenerator::methodId,
+                            Function.identity()
+                    ));
+
+            ObjectMapper mapper = new ObjectMapper();
+            List<LLMResult> results =
+                    mapper.readValue(LLMResponse, new TypeReference<>() {});
+
+            for (LLMResult result : results) {
+                PsiMethod method = methodIndex.get(result.methodId());
+                if (method != null) {
+                    PsiMethodAnnotator.annotateMethod(project,method, result.featureName());
+                }
             }
 
-            Document document = editor.getDocument();
-            PsiDocumentManager psiMgr = PsiDocumentManager.getInstance(project);
+            // VERY IMPORTANT: sort bottom → top to avoid offset shifting
+            /*methods.sort((a, b) ->
+                    Integer.compare(
+                            b.getTextRange().getStartOffset(),
+                            a.getTextRange().getStartOffset()
+                    )
+            );
 
-
-            // Sort annotations descending by endLine so edits don't shift earlier ones
-            annotations.sort(Comparator.comparingInt(a -> -a.getEndingRow()));
-
-            WriteCommandAction.runWriteCommandAction(project, () -> {
-
-                psiMgr.commitDocument(document);
-
-                for (Annotation ann : annotations) {
-                    insertAnnotation(document, ann);
-                }
-
-                psiMgr.commitDocument(document);
-            });
+            for (PsiMethod method : methods) {
+                PsiMethodAnnotator.annotateMethod(
+                        project,
+                        method,
+                        "DUMMY SECURITY FEATURE"
+                );
+            }*/
         }
-    }
-
-    private static void insertAnnotation(Document document, Annotation ann) {
-
-        int startOffset = document.getLineStartOffset(ann.getStartingRow()-1);
-        int endOffset   = document.getLineEndOffset(ann.getEndingRow()-1);
-
-        String startComment = "// " + ann.getAnnotationText() + "\n";
-        String endComment   = "\n// end of " + ann.getAnnotationText() + "\n";
-
-        document.insertString(endOffset, endComment);
-        document.insertString(startOffset, startComment);
     }
 }
