@@ -35,38 +35,40 @@ public final class PromptService {
                 .getApplication()
                 .getService(KeyService.class);
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(provider.getUrl()))
-                .header("Authorization", String.format("Bearer %s", keyService.getApiKey(provider)))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+        return keyService.getApiKey(provider).thenCompose(key -> {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(provider.getUrl()))
+                    .header("Authorization", String.format("Bearer %s", key))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
 
-        return CLIENT
-                .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    //checks if the api key is valid
-                    int status = response.statusCode();
-                    if (status == 401 || status == 403) {
-                        throw new InvalidApiKeyException(
-                                "Invalid API key for provider " + provider + " with model " + provider.getModel()
-                        );
-                    }
-                    return response.body();
-                })
-                .thenApply(text -> {
-                    try {
-                        return RESPONSE_MAPPER.readValue(text, CompletionResponse.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to parse JSON", e);
-                    }
-                })
-                .thenApply(response -> {
-                    List<Completion> completions = response.completions();
-                    if (completions == null || completions.isEmpty()) {
-                        throw new RuntimeException("Empty prompt response");
-                    }
-                    return completions.getFirst().message().content();
-                });
+            return CLIENT
+                    .sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenApply(response -> {
+                        //checks if the api key is valid
+                        int status = response.statusCode();
+                        if (status == 401 || status == 403) {
+                            throw new InvalidApiKeyException(
+                                    "Invalid API key for provider " + provider + " with model " + provider.getModel()
+                            );
+                        }
+                        return response.body();
+                    })
+                    .thenApply(text -> {
+                        try {
+                            return RESPONSE_MAPPER.readValue(text, CompletionResponse.class);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to parse JSON", e);
+                        }
+                    })
+                    .thenApply(response -> {
+                        List<Completion> completions = response.completions();
+                        if (completions == null || completions.isEmpty()) {
+                            throw new RuntimeException("Empty prompt response");
+                        }
+                        return completions.getFirst().message().content();
+                    });
+        });
     }
 
     // write the JSON body for a completions request
