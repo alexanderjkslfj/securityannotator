@@ -7,11 +7,9 @@ import java.util.Objects;
 public class TaxonomyReader {
 
     public String readTaxonomy() throws IOException {
-        String taxonomy = new String(
+        return new String(
                 Objects.requireNonNull(this.getClass().getResourceAsStream("/taxonomy/List.json")).readAllBytes(),
                 StandardCharsets.UTF_8
-
         );
-        return taxonomy;
     }
 }
