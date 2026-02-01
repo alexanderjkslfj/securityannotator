@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 
 public enum LLMProvider {
     RUB_GPT("RUB-GPT", "gpt-4.1-2025-04-14", "https://gpt.ruhr-uni-bochum.de/external/v1/chat/completions"),
-    CHAT_GPT("ChatGPT", "gpt-4.1-mini", "https://api.openai.com/v1/chat/completions");
+    CHAT_GPT("ChatGPT", "gpt-4.1-mini", "https://api.openai.com/v1/chat/completions"),
+    CLAUDE("Claude", "claude-haiku-4-5", "https://api.anthropic.com/v1/chat/completions"),
+    GEMINI("Gemini", "gemini-2.5-flash-lite", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
 
     private final String displayName;
     private final String model;
