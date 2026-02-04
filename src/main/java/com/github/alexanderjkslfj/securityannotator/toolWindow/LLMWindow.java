@@ -25,6 +25,8 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.github.alexanderjkslfj.securityannotator.services.ResponseLogger.logLlmResponse;
+
 public class LLMWindow implements ToolWindowFactory{
     private @Nullable java.util.List<Annotation> toBeApplied = null;
     private @Nullable String lastLlmResponse = null;
@@ -132,8 +134,9 @@ public class LLMWindow implements ToolWindowFactory{
                                     toBeApplied = list;
 
                                     outputArea.setText(annotationsToText(toBeApplied));
-
                                     applyButton.setEnabled(true);
+
+                                    logLlmResponse(annotationsToText(toBeApplied), provider.toString());
                                 } else {
                                     outputArea.setText("No annotations found.");
                                 }
@@ -155,6 +158,7 @@ public class LLMWindow implements ToolWindowFactory{
                         lastLlmResponse = response;
                         outputArea.setText(response);
                         applyButton.setEnabled(true);
+                        logLlmResponse(provider.toString(), response);
                     }
                 }).exceptionally(ex -> {
                     ApplicationManager.getApplication().invokeLater(() -> {
