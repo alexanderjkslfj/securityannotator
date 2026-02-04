@@ -30,7 +30,7 @@ public class PsiMethodAnnotator {
             int endOffset   = method.getTextRange().getEndOffset();
 
             String startComment = "//&begin [" + annotationName + "]\n";
-            String endComment   = "\n//&end [" + annotationName + "]\n";
+            String endComment   = "\n//&end [" + annotationName + "]";
 
             // Insert END first
             document.insertString(endOffset, endComment);

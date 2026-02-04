@@ -9,10 +9,12 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiMethod;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +39,16 @@ public class Annotator {
             List<LLMResult> results =
                     mapper.readValue(LLMResponse, new TypeReference<>() {});
 
+            PsiFile psiFile = methods.getFirst().getContainingFile();
+            List<AnnotationBlock> existingBlocks =
+                    collectAnnotationBlocks(psiFile);
+
             for (LLMResult result : results) {
                 PsiMethod method = methodIndex.get(result.methodId());
-                if (method != null) {
-                    PsiMethodAnnotator.annotateMethod(project,method, result.featureName());
-                }
+
+                if (method == null)  continue;
+                if (isMethodAlreadyAnnotated(method, existingBlocks)) continue;
+                PsiMethodAnnotator.annotateMethod(project,method, result.featureName());
             }
         }
     }
@@ -84,5 +91,48 @@ public class Annotator {
 
         document.insertString(endOffset, endComment);
         document.insertString(startOffset, startComment);
+    }
+
+    private static boolean isMethodAlreadyAnnotated(
+            @NotNull PsiMethod method,
+            @NotNull List<AnnotationBlock> blocks
+    ) {
+        TextRange methodRange = method.getTextRange();
+
+        return blocks.stream()
+                .anyMatch(b -> b.range().contains(methodRange));
+    }
+
+    private static List<AnnotationBlock> collectAnnotationBlocks(@NotNull PsiFile file) {
+        List<PsiComment> comments =
+                PsiTreeUtil.findChildrenOfType(file, PsiComment.class)
+                        .stream()
+                        .filter(c -> c.getText().startsWith("//&"))
+                        .sorted(Comparator.comparingInt(c -> c.getTextRange().getStartOffset()))
+                        .toList();
+
+        List<AnnotationBlock> blocks = new ArrayList<>();
+
+        PsiComment currentBegin = null;
+        String feature = null;
+
+        for (PsiComment comment : comments) {
+            String text = comment.getText();
+
+            if (text.startsWith("//&begin")) {
+                currentBegin = comment;
+                feature = text.substring("//&begin".length()).trim();
+            } else if (text.startsWith("//&end") && currentBegin != null) {
+                TextRange range = new TextRange(
+                        currentBegin.getTextRange().getStartOffset(),
+                        comment.getTextRange().getEndOffset()
+                );
+                blocks.add(new AnnotationBlock(range, feature));
+                currentBegin = null;
+                feature = null;
+            }
+        }
+
+        return blocks;
     }
 }
