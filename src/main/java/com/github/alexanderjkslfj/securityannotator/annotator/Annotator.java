@@ -86,8 +86,8 @@ public class Annotator {
         int startOffset = document.getLineStartOffset(ann.start_line()-1);
         int endOffset   = document.getLineEndOffset(ann.end_line()-1);
 
-        String startComment = "// " + ann.category() + "\n";
-        String endComment   = "\n// end of " + ann.category() + "\n";
+        String startComment = "//&begin [" + ann.category() + "]\n";
+        String endComment   = "\n//&end [" + ann.category() + "]";
 
         document.insertString(endOffset, endComment);
         document.insertString(startOffset, startComment);
