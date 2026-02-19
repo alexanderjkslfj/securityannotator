@@ -131,7 +131,7 @@ public class LLMWindow implements ToolWindowFactory{
                             if (response != null) {
                                 java.util.List<Annotation> list = Parser.parse(project, response);
                                 if (list != null && !list.isEmpty()) {
-                                    toBeApplied = list;
+                                    toBeApplied = Annotator.deduplicateAnnotations(list);
 
                                     outputArea.setText(annotationsToText(toBeApplied));
                                     applyButton.setEnabled(true);

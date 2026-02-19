@@ -33,7 +33,6 @@ public class Parser {
         if (list == null) {
             return null;
         }
-        System.out.println("a");
         return findCode(project, list);
     }
 
