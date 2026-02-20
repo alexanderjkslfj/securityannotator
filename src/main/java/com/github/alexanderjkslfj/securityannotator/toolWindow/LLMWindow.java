@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 
 import static com.github.alexanderjkslfj.securityannotator.services.ResponseLogger.logLlmResponse;
@@ -133,6 +134,7 @@ public class LLMWindow implements ToolWindowFactory{
                                 if (list != null && !list.isEmpty()) {
                                     toBeApplied = Annotator.deduplicateAnnotations(list);
 
+                                    toBeApplied.sort(Comparator.comparingInt(x -> x.start_line));
                                     outputArea.setText(annotationsToText(toBeApplied));
                                     applyButton.setEnabled(true);
 
@@ -178,10 +180,10 @@ public class LLMWindow implements ToolWindowFactory{
     private @NotNull String annotationsToText(@NotNull java.util.List<Annotation> annotations) {
         StringBuilder text = new StringBuilder("Annotations found:\n");
         for (Annotation a : annotations) {
-            if (a.start_line() == a.end_line()) {
-                text.append("Line ").append(a.start_line()).append(": ").append(a.category()).append("\n");
+            if (a.start_line == a.end_line) {
+                text.append("Line ").append(a.start_line).append(": ").append(a.category).append("\n");
             } else {
-                text.append("Lines ").append(a.start_line()).append(" to ").append(a.end_line()).append(": ").append(a.category()).append("\n");
+                text.append("Lines ").append(a.start_line).append(" to ").append(a.end_line).append(": ").append(a.category).append("\n");
             }
         }
         return text.toString();

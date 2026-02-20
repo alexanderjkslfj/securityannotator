@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.alexanderjkslfj.securityannotator.dataPackage.MethodIDGenerator;
+import com.github.alexanderjkslfj.securityannotator.util.Category;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -31,9 +32,15 @@ record Change (
         Annotation annotation
 ){}
 
+enum PartType {
+    Start,
+    End,
+    Line,
+}
+
 record AnnotationPart (
-        boolean isStart,
-        String category,
+        PartType type,
+        Category category,
         int line
 ){}
 
@@ -112,8 +119,12 @@ public class Annotator {
     private static @NotNull List<ChangePart> getParts(@NotNull List<Change> changes) {
         List<ChangePart> parts = new ArrayList<>();
         for (Change change : changes) {
-            parts.add(new ChangePart(change.shouldExist(), new AnnotationPart( true, change.annotation().category(), change.annotation().start_line())));
-            parts.add(new ChangePart(change.shouldExist(), new AnnotationPart(false, change.annotation().category(), change.annotation().end_line())));
+            if(change.annotation().start_line == change.annotation().end_line) {
+                parts.add(new ChangePart(change.shouldExist(), new AnnotationPart(PartType.Line, change.annotation().category, change.annotation().start_line)));
+            } else {
+                parts.add(new ChangePart(change.shouldExist(), new AnnotationPart(PartType.Start, change.annotation().category, change.annotation().start_line)));
+                parts.add(new ChangePart(change.shouldExist(), new AnnotationPart(PartType.End, change.annotation().category, change.annotation().end_line)));
+            }
         }
         return parts;
     }
@@ -123,7 +134,7 @@ public class Annotator {
 
         olds: for (Annotation oldAnn : oldAnns) {
             for (Annotation newAnn : newAnns) {
-                if(oldAnn.start_line() == newAnn.start_line() && oldAnn.end_line() == newAnn.end_line() && oldAnn.category().equals(newAnn.category())) {
+                if(oldAnn.start_line == newAnn.start_line && oldAnn.end_line == newAnn.end_line && oldAnn.category.overlaps(newAnn.category)) {
                     continue olds;
                 }
             }
@@ -132,7 +143,7 @@ public class Annotator {
 
         news: for (Annotation newAnn : newAnns) {
             for (Annotation oldAnn : oldAnns) {
-                if(oldAnn.start_line() == newAnn.start_line() && oldAnn.end_line() == newAnn.end_line() && oldAnn.category().equals(newAnn.category())) {
+                if(oldAnn.start_line == newAnn.start_line && oldAnn.end_line == newAnn.end_line && oldAnn.category.overlaps(newAnn.category)) {
                     continue news;
                 }
             }
@@ -143,19 +154,24 @@ public class Annotator {
     }
 
     public static @NotNull List<Annotation> deduplicateAnnotations(@NotNull List<Annotation> annotations) {
-        annotations.sort(Comparator.comparingInt(Annotation::start_line));
+        annotations.sort(Comparator.comparingInt(x -> x.start_line));
 
         List<Annotation> result = new ArrayList<>();
         annotationloop: for (Annotation fresh : annotations) {
             for (int i = result.size() - 1; i >= 0; i--) {
                 Annotation open = result.get(i);
-                if(fresh.start_line() > open.end_line() + 1) {
+                if(fresh.start_line > open.end_line + 1) {
                     continue;
                 }
-                if(fresh.category().equals(open.category())) {
-                    if(fresh.end_line() > open.end_line()) {
-                        result.set(i, new Annotation(open.start_line(), fresh.end_line(), fresh.category()));
-                    }
+                if(fresh.category.overlaps(open.category)) {
+                    Category shorterCategory = (fresh.category.length() > open.category.length())
+                            ? open.category
+                            : fresh.category;
+                    int furtherEnd = Math.max(fresh.end_line, open.end_line);
+                    result.set(i, new Annotation(open.start_line, furtherEnd, shorterCategory));
+                    continue annotationloop;
+                } else if(fresh.start_line == fresh.end_line && open.start_line == open.end_line) {
+                    result.set(i, new Annotation(open.start_line, open.end_line, fresh.category));
                     continue annotationloop;
                 }
             }
@@ -165,10 +181,10 @@ public class Annotator {
         return result;
     }
 
-    private static final Pattern BEGIN_ANNOTATION = Pattern.compile("//\\s*&(begin|end)\\s*\\[\\s*([^\\]]*?)\\s*\\]");
+    private static final Pattern ANNOTATION_PART = Pattern.compile(" ?//\\s*&(begin|end|line)\\s*\\[\\s*([^\\]]*?)\\s*\\]");
 
     public static @NotNull String removeAnnotations(@NotNull String code) {
-        return BEGIN_ANNOTATION.matcher(code).replaceAll("");
+        return ANNOTATION_PART.matcher(code).replaceAll("");
     }
 
     private static @Nullable List<Annotation> getExistingAnnotations(@NotNull Document document) {
@@ -178,22 +194,29 @@ public class Annotator {
 
         List<String> lines = document.getText().lines().toList();
         for(int lineIdx = 0; lineIdx < lines.size(); lineIdx++) {
-            var m = BEGIN_ANNOTATION.matcher(lines.get(lineIdx));
+            var m = ANNOTATION_PART.matcher(lines.get(lineIdx));
             if(!m.find()) {
                 continue;
             }
-            if(m.group(1).equals("begin")) {
-                Annotation ann = new Annotation(lineIdx, -1, m.group(2));
-                unfinishedAnnotations.add(ann);
-            } else if (!unfinishedAnnotations.isEmpty()) {
-                Annotation last = unfinishedAnnotations.removeLast();
-                if(!m.group(2).equals(last.category())) {
-                    return null;
-                }
-                Annotation full = new Annotation(last.start_line(), lineIdx, last.category());
-                existingAnnotations.add(full);
-            } else {
-                return null;
+            switch (m.group(1)) {
+                case "begin":
+                    Annotation begin = new Annotation(lineIdx + 1, -1, m.group(2));
+                    unfinishedAnnotations.add(begin);
+                    break;
+                case "end":
+                    Annotation last = unfinishedAnnotations.removeLast();
+                    if(!last.category.overlaps(new Category(m.group(2)))) {
+                        return null;
+                    }
+                    Annotation full = new Annotation(last.start_line, lineIdx + 1, last.category);
+                    existingAnnotations.add(full);
+                    break;
+                case "line":
+                    Annotation line = new Annotation(lineIdx + 1, lineIdx + 1, m.group(2));
+                    existingAnnotations.add(line);
+                    break;
+                default:
+                    throw new AssertionError("unreachable");
             }
         }
         if(!unfinishedAnnotations.isEmpty()) {
@@ -204,25 +227,35 @@ public class Annotator {
     }
 
     private static void insertAnnotationPart(@NotNull Document document, @NotNull AnnotationPart annPart) {
-        if (annPart.isStart()) {
-            int offset = document.getLineStartOffset(annPart.line()-1);
-            String comment = "//&begin [" + annPart.category() + "]\n";
-            document.insertString(offset, comment);
-        } else {
-            int offset = document.getLineEndOffset(annPart.line()-1);
-            String comment = "\n//&end [" + annPart.category() + "]";
-            document.insertString(offset, comment);
+        int offset;
+        String comment;
+        switch (annPart.type()) {
+            case Start:
+                offset = document.getLineStartOffset(annPart.line()-1);
+                comment = "//&begin [" + annPart.category().toString() + "]\n";
+                break;
+            case End:
+                offset = document.getLineEndOffset(annPart.line()-1);
+                comment = "\n//&end [" + annPart.category().toString() + "]";
+                break;
+            case Line:
+                offset = document.getLineEndOffset(annPart.line()-1);
+                comment = " //&line [" + annPart.category().toString() + "]";
+                break;
+            default:
+                throw new AssertionError("unreachable");
         }
+        document.insertString(offset, comment);
     }
 
     private static void removeAnnotationPart(@NotNull Document document, @NotNull AnnotationPart annPart) {
         int startOffset = document.getLineStartOffset(annPart.line()-1);
         int endOffset = document.getLineEndOffset(annPart.line()-1);
         String lineText = document.getText(new TextRange(startOffset, endOffset));
-        var m = BEGIN_ANNOTATION.matcher(lineText);
+        var m = ANNOTATION_PART.matcher(lineText);
         if(!m.find()) return;
         int index = m.start();
-        document.deleteString(index, endOffset + 1);
+        document.deleteString(startOffset + index, endOffset + ((index == 0) ? 1 : 0));
     }
 
     private static boolean isMethodAlreadyAnnotated(
