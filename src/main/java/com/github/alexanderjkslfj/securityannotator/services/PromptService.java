@@ -28,6 +28,7 @@ public final class PromptService {
 
     private PromptService() {}
 
+    /// Send a prompt, receive a response.
     public @NotNull CompletableFuture<@Nullable String> prompt(@NotNull LLMProvider provider, @NotNull String message) throws RuntimeException {
         String body = buildCompletionBody(message, provider.getModel());
 
@@ -71,7 +72,7 @@ public final class PromptService {
         });
     }
 
-    // write the JSON body for a completions request
+    /// Write the JSON body for a completions request.
     private @NotNull String buildCompletionBody(@NotNull String message, @NotNull String model) throws RuntimeException {
         ChatRequest body = new ChatRequest(
                 model,

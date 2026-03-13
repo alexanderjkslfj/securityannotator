@@ -24,6 +24,7 @@ public class ResponseLogger {
         return logDir.resolve("llm-responses.log");
     }
 
+    /// Log an LLM response to disk
     public static void logLlmResponse(
             @NotNull String provider,
             @NotNull String response

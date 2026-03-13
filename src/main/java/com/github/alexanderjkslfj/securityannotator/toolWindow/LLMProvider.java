@@ -2,6 +2,7 @@ package com.github.alexanderjkslfj.securityannotator.toolWindow;
 
 import org.jetbrains.annotations.NotNull;
 
+/// Providers to be offered as options in the sidebar's provider dropdown.
 public enum LLMProvider {
     RUB_GPT("RUB-GPT", "gpt-4.1-2025-04-14", "https://gpt.ruhr-uni-bochum.de/external/v1/chat/completions"),
     CHAT_GPT("ChatGPT", "gpt-4.1-mini", "https://api.openai.com/v1/chat/completions"),

@@ -15,6 +15,7 @@ import com.intellij.psi.PsiMethod;
 import org.jetbrains.annotations.NotNull;
 
 public class PromptBuilder {
+        /// Build a prompt to be sent to the LLM for line-based analysis.
         public static @NotNull String buildTextPrompt(@NotNull Project project) throws IOException {
                 String promptText1 = "I want a section of code to be searched for security features. I'm looking for the following categories of security features (formatted as a JSON array):\n";
                 String taxonomy = new TaxonomyReader().readTaxonomy();
@@ -29,6 +30,7 @@ public class PromptBuilder {
                 return promptText1 + taxonomy + promptText2 + promptText22 + promptText3 + responseStructure + promptText4 + openedClassNoAnnotations;
         }
 
+        /// Build a prompt to be sent to the LLM for method-based analysis.
         public static @NotNull String buildPsiPrompt(@NotNull Project project) throws IOException {
                 List<PsiMethod> methods = MethodGatherer.collectMethods(project);
 

@@ -28,16 +28,18 @@ import com.github.alexanderjkslfj.securityannotator.util.Annotation;
 import org.jetbrains.annotations.Nullable;
 
 record Change (
+        // Whether the annotation was added (true) or removed (false).
         boolean shouldExist,
         Annotation annotation
 ){}
 
 enum PartType {
-    Start,
-    End,
-    Line,
+    Start, // Start of a multi line annotation.
+    End, // End of a multi line annotation.
+    Line, // Single line annotation.
 }
 
+/// Only the start or end of an annotation (or for single line annotations, both).
 record AnnotationPart (
         PartType type,
         Category category,
@@ -45,11 +47,14 @@ record AnnotationPart (
 ){}
 
 record ChangePart (
+        // Whether the annotation was added (true) or removed (false).
         boolean shouldExist,
         AnnotationPart part
 ){}
 
+/// Manipulates annotations embedded in the document.
 public class Annotator {
+    /// Parse the LLM response of the method-based approach and insert the identified features into the document.
     public static void insertFeatureCommentByText(@NotNull Project project, @NotNull String LLMResponse) throws JsonProcessingException {
         {
             List<PsiMethod> methods = MethodGatherer.collectMethods(project);
@@ -78,6 +83,7 @@ public class Annotator {
         }
     }
 
+    /// Insert annotations into the document.
     public static void insertFeatureCommentByAnnotation(@NotNull Project project, @NotNull List<Annotation> annotations) throws RuntimeException{
         {
             Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
@@ -86,8 +92,8 @@ public class Annotator {
                 return; // in case editor is open
             }
 
+            // Get existing annotations and insert/remove only the delta.
             Document document = editor.getDocument();
-
             List<Annotation> existing = getExistingAnnotations(document);
             if(existing == null) throw new RuntimeException("Existing annotations are invalid.");
             List<Annotation> combined = new ArrayList<>();
@@ -95,10 +101,11 @@ public class Annotator {
             combined.addAll(annotations);
             List<Annotation> changed = deduplicateAnnotations(combined);
             List<Change> changes = getChanges(existing, changed);
-            // Sort annotations descending by line so edits don't shift earlier ones
+            // Sort annotations descending by line so edits don't shift earlier ones.
             List<ChangePart> parts = getParts(changes);
             parts.sort(Comparator.comparingInt(a -> -a.part().line()));
 
+            // Wrap the changes in one transaction to make undoing simpler.
             PsiDocumentManager psiMgr = PsiDocumentManager.getInstance(project);
             WriteCommandAction.runWriteCommandAction(project, () -> {
                 psiMgr.commitDocument(document);
@@ -116,6 +123,7 @@ public class Annotator {
         }
     }
 
+    /// Split each change into its parts (start and end).
     private static @NotNull List<ChangePart> getParts(@NotNull List<Change> changes) {
         List<ChangePart> parts = new ArrayList<>();
         for (Change change : changes) {
@@ -129,6 +137,7 @@ public class Annotator {
         return parts;
     }
 
+    /// Get the differences between two lists of annotations.
     private static @NotNull List<Change> getChanges(@NotNull List<Annotation> oldAnns, @NotNull List<Annotation> newAnns) {
         List<Change> changes =  new ArrayList<>();
 
@@ -153,6 +162,7 @@ public class Annotator {
         return changes;
     }
 
+    /// Remove duplicates. (Also removes non-exact duplicates that merely overlap.)
     public static @NotNull List<Annotation> deduplicateAnnotations(@NotNull List<Annotation> annotations) {
         annotations.sort(Comparator.comparingInt(x -> x.start_line));
 
@@ -181,12 +191,15 @@ public class Annotator {
         return result;
     }
 
+    /// Pattern to identify part of an annotation.
     private static final Pattern ANNOTATION_PART = Pattern.compile(" ?//\\s*&(begin|end|line)\\s*\\[\\s*([^\\]]*?)\\s*\\]");
 
+    /// Remove all annotations in the code.
     public static @NotNull String removeAnnotations(@NotNull String code) {
         return ANNOTATION_PART.matcher(code).replaceAll("");
     }
 
+    /// Retrieve all existing annotations in the code.
     private static @Nullable List<Annotation> getExistingAnnotations(@NotNull Document document) {
         List<Annotation> existingAnnotations = new ArrayList<>();
 
@@ -226,6 +239,7 @@ public class Annotator {
         return existingAnnotations;
     }
 
+    /// Insert a single annotation part into the code.
     private static void insertAnnotationPart(@NotNull Document document, @NotNull AnnotationPart annPart) {
         int offset;
         String comment;
@@ -248,6 +262,7 @@ public class Annotator {
         document.insertString(offset, comment);
     }
 
+    /// Remove a single annotation part from the code.
     private static void removeAnnotationPart(@NotNull Document document, @NotNull AnnotationPart annPart) {
         int startOffset = document.getLineStartOffset(annPart.line()-1);
         int endOffset = document.getLineEndOffset(annPart.line()-1);
