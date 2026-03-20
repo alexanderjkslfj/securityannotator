@@ -101,6 +101,7 @@ public class LLMWindow implements ToolWindowFactory{
 
             AnalyzationMethod method = (AnalyzationMethod) methodSelector.getSelectedItem();
             String promptInput;
+            /// decide which approach is used and build string accordingly
             try {
                 if (method == AnalyzationMethod.RAW_TEXT) {
                     promptInput = PromptBuilder.buildTextPrompt(project);
@@ -124,7 +125,7 @@ public class LLMWindow implements ToolWindowFactory{
                 return;
             }
             CompletableFuture<String> request = service.prompt(provider, promptInput);
-
+            ///individual lines method
             if (method == AnalyzationMethod.RAW_TEXT) {
                 request
                         .thenAccept(response -> ApplicationManager.getApplication().invokeLater(() -> {
@@ -153,6 +154,7 @@ public class LLMWindow implements ToolWindowFactory{
                             });
                             return null;
                         });
+            ///else Java methods approach
             } else {
                 request.thenAccept(response -> {
                     analyzeButton.setEnabled(true);

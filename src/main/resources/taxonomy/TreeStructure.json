@@ -3,85 +3,85 @@
     "access control": {
       "authentication": {
         "credentials": {},
-        "one-time-password": {},
-        "certificate authentication": {},
-        "multifactor authentication": {},
-        "single sign-on": {}
+        "one_time_password": {},
+        "certificate_authentication": {},
+        "multifactor_authentication": {},
+        "single_sign_on": {}
       },
       "authorization": {
-        "access quota limitation": {},
-        "Permission-Based": {},
-        "discretionary access control": {},
-        "mandatory access control": {},
-        "lattice-based access control": {},
-        "location-based access control": {},
-        "role-based access control": {},
-        "rule-based access control": {},
-        "timed access control": {},
-        "state-based access control": {},
-        "application mode-based access control": {}
+        "access_quota_limitation": {},
+        "Permission_Based": {},
+        "discretionary_access control": {},
+        "mandatory_access_control": {},
+        "lattice_based_access_control": {},
+        "location_based_access_control": {},
+        "role_based_access_control": {},
+        "rule_based_access_control": {},
+        "timed_access_control": {},
+        "state_based_access_control": {},
+        "application_mode_based_access_control": {}
       }
     },
     "cryptography": {
       "encryption": {
-        "stream ciphers": {},
-        "block ciphers": {},
-        "symmetric key cryptography": {},
-        "asymmetric key cryptography": {},
-        "hybrid cryptosystems": {}
+        "stream_ciphers": {},
+        "block_ciphers": {},
+        "symmetric_key_cryptography": {},
+        "asymmetric_key_cryptography": {},
+        "hybrid_cryptosystems": {}
       },
-      "cryptographic hashing": {},
-      "key management": {
-        "key generation": {},
-        "key distribution": {},
-        "group key management": {},
-        "key storage": {},
-        "key revocation": {}
+      "cryptographic_hashing": {},
+      "key_management": {
+        "key_generation": {},
+        "key_distribution": {},
+        "group_key_management": {},
+        "key_storage": {},
+        "key_revocation": {}
       },
       "signature": {
-        "message signing": {},
+        "message_signing": {},
         "certification": {},
-        "message authentication": {},
-        "digital watermarking": {}
+        "message_authentication": {},
+        "digital_watermarking": {}
       },
       "steganography": {}
     },
-    "security monitoring": {
-      "automated response": {},
-      "history maintenance": {},
+    "security_monitoring": {
+      "automated_response": {},
+      "history_maintenance": {},
       "logging": {}
     },
-    "secure data handling": {
-      "data validation": {
-        "input validation": {
+    "secure_data handling": {
+      "data_validation": {
+        "input_validation": {
           "blacklisting": {},
           "whitelisting": {},
-          "download verification": {}
+          "download_verification": {}
         },
-        "output validation": {}
+        "output_validation": {}
       },
-      "data sanitization": {
-        "input sanitization": {},
-        "output sanitization": {},
-        "parameterized prepared statement": {}
+      "data_sanitization": {
+        "input_sanitization": {},
+        "output_sanitization": {},
+        "parameterized_prepared_statement": {}
       },
-      "retention control": {},
-      "secure storage": {},
-      "trusted sources": {
-        "time source": {},
-        "source of randomness": {}
+      "retention_control": {},
+      "secure_storage": {},
+      "trusted_sources": {
+        "time_source": {},
+        "source_of_randomness": {}
       }
     },
-    "system state protection": {
-      "resource management": {},
-      "system state validation": {},
-      "session management": {
-        "replay attack prevention": {},
-        "session fixation protection": {},
-        "session takeover prevention": {},
-        "session timeout": {}
+    "system_state_protection": {
+      "resource_management": {},
+      "system_state_validation": {},
+      "session_management": {
+        "replay_attack_prevention": {},
+        "session_fixation_protection": {},
+        "session_takeover_prevention": {},
+        "session_timeout": {}
       },
-      "state synchronization": {}
+      "state_synchronization": {}
     }
   }
 }

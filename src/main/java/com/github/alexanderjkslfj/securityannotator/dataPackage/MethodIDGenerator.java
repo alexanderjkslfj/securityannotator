@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class MethodIDGenerator {
-
+    ///generates IDs for each method found in the class which are used to for communication with the LLM
     public static @NotNull String methodId(@NotNull PsiMethod method) {
         PsiClass cls = method.getContainingClass();
         String className = cls != null ? cls.getQualifiedName() : "<anonymous>";

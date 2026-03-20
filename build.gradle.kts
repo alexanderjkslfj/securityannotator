@@ -9,6 +9,27 @@ plugins {
     alias(libs.plugins.qodana) // Gradle Qodana Plugin
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = "21"
+        targetCompatibility = "21"
+    }
+
+    wrapper {
+        gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    publishPlugin {
+        dependsOn(patchChangelog)
+    }
+}
+
 group = providers.gradleProperty("pluginGroup").get()
 version = providers.gradleProperty("pluginVersion").get()
 

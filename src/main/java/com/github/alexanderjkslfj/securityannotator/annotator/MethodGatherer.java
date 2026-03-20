@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class MethodGatherer {
+    ///gets all methods from the currently open class and adds them to a list
     public static @NotNull List<PsiMethod> collectMethods(@NotNull Project project) {
 
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();

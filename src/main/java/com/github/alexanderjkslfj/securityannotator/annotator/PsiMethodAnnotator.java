@@ -7,7 +7,7 @@ import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 
 public class PsiMethodAnnotator {
-
+    /// adds the HanS annotations in front and after the method in the editor window
     public static void annotateMethod(
             @NotNull Project project,
             @NotNull PsiMethod method,
@@ -29,13 +29,16 @@ public class PsiMethodAnnotator {
             int startOffset = method.getTextRange().getStartOffset();
             int endOffset   = method.getTextRange().getEndOffset();
 
-            String startComment = "//&begin [" + annotationName + "]\n";
-            String endComment   = "\n//&end [" + annotationName + "]";
+            int lastDot = annotationName.lastIndexOf('.');
+            String annotationNameShort = annotationName.substring(lastDot + 1);
 
-            // Insert END first
+            String startComment = "//&begin [" + annotationNameShort + "]\n";
+            String endComment   = "\n//&end [" + annotationNameShort + "]";
+
+            /// Insert END first
             document.insertString(endOffset, endComment);
 
-            // Insert START second
+            /// Insert START second
             document.insertString(startOffset, startComment);
 
             PsiDocumentManager.getInstance(project).commitDocument(document);
